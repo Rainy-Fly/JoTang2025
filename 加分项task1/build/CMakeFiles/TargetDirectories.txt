@@ -1,0 +1,3 @@
+/home/fushao/Codes/加分项task1/build/CMakeFiles/demo.dir
+/home/fushao/Codes/加分项task1/build/CMakeFiles/edit_cache.dir
+/home/fushao/Codes/加分项task1/build/CMakeFiles/rebuild_cache.dir
