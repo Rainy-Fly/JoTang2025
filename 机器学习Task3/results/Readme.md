@@ -9,29 +9,37 @@
 ## 二.结果分析
 ### (1)第一层卷积核的图像分析
 #### 1.识别颜色的卷积核
-![](/results/可视化/第一层卷积核可视化/10.png)
+<img src="可视化/第一层卷积核可视化/10.png" style="width:200">
+
 这张图片的Red通道为浅色,数值小,响应不敏感,Blue通道为亮色,数值大,响应敏感    
 说明这个卷积核学习的是图片的Blue蓝色特征
 
 #### 2.识别三角形的卷积核
-![](/results/可视化/第一层卷积核可视化/2.png)
-R通道明显可见右上三角高亮,G通道左下三角亮,说明n两个卷积核分别在两个通道学习不同方向的三角特征
+<img src="可视化/第一层卷积核可视化/2.png" style="width:200">
+
+R通道明显可见右上三角高亮,G通道左下三角亮,说明两个卷积核分别在两个通道学习不同方向的三角特征
 #### 3.学习边缘轮廓的卷积核
-![](/results/可视化/第一层卷积核可视化/8.png)
+
+<img src="可视化/第一层卷积核可视化/8.png" style="width:200">
+
 最后一个通道的左侧和中间都是浅色,而右边可见半椭圆形亮色区域,说明他在学习图片的左轮廓
 ### (2)第一和五层卷积核L2范数h柱状图分析
 1.第一层卷积核的响应特征
 第一层卷积核学习的是简单特征,在不同类别中都具有普遍性,因此差异不大且都能提取到比较多的低级特征(线条,明暗,轮廓),因此响应明显且平均
-![第一层第11个卷积核](/results/可视化/L2/1-11.png)
+
+<img src="可视化/L2/1-11.png" style="width:200">
+
 2.第五层卷积核特征
 第五层拿到的特征图经过了前面卷积层的特征提取,识别到的是高级特征,而高级特征具有特异性,每一类拥有独一无二的高级特征,如猫的耳朵,尾巴,汽车的流线型构造,轮船的宽底.因此,第五层的卷积核通常只对某一两类敏感,L2不均匀.
-![](/results/可视化/L2/5-58.png)
-![](/results/可视化/L2/5-15.png)
+
+<img src="可视化/L2/5-58.png" style="width:200">
+<img src="可视化/L2/5-15.png" style="width:200">
 
 ## 三.困难及解决方案
 
 ### 1.文件导入
-操作ImageFolder时,以为相对路径```~/Codes/机械学习3/photo_sourse```i只是n省略了绝对路径的前部分,担心和绝对路径一样无法在其他电脑上正常运行,使用data.py的Path获得父目录dur,再拼接```trainDir=dur/"photo_resourse/train" valDir=dur/"photo_resourse/val" testDir=dur/"photo_resourse/test"```;不断调整路径,增删放图片的文件夹,知晓了ImageFolder读取图片时传给他的文件夹即是他读的最大单位,下面的子文件夹会被他对应为为标签.
+不清楚ImageFolder读取文件的方式，以为每个标签的文件夹还要套一个文件夹;经过不断调整路径,增删放图片的文件夹,知晓了ImageFolder读取图片时传给他的文件夹即是他读取得根目录,下面的子文件夹名会被他对应为为标签，每个输出都包含图片矩阵和标签.<br>
+最后：我使用data.py的Path获得父目录dur,再拼接```trainDir=dur/"photo_resourse/train" valDir=dur/"photo_resourse/val" testDir=dur/"photo_resourse/test"```
 ### 2.卷积和池化操作
 最初使用嵌套for循环,滑动n窗口并不断纠结(y,x)在原特征图与卷积/池化后的图以及padding,窗口大小之间的数学关系;因为坐标从0开始计数,距离值和坐标值从左加和从右减要+1 or-1or不操作,经过反复调整:
 ```python
@@ -55,10 +63,10 @@ R通道明显可见右上三角高亮,G通道左下三角亮,说明n两个卷积
     return out
 ```
 
-最终循环几次后内存耗尽,VScode无响应...
-于是换成```from torch.nn import MaxPool2d 
+确实可以运行，但是最终循环几次后内存耗尽,VScode无响应...
+于是只好换成```from torch.nn import MaxPool2d 
         self.c=torch.nn.init.kaiming_normal_(self.c,mode="fan_in",nonlinearity="relu")```
-~~愉快地~~体验到了由矩阵运算,性能之王C++,并行处理而来的高效性
+~~愉快地~~体验到了由矩阵运算,性能之王C++,并行处理带来的高效性
 ### 3.张量的维度问题
 torch.cat/stack,tensor.max/mean/std,flatten,view,reshape都涉及维度操作,每次遇到都令人头疼,最终我认为都可以从permute理解.以三维矩阵为例,原本的维度dim=[0,1,2],permuten将维度调换,很抽象,其实可以理解为将立方体转换视图,如(0,2,1)将原本的宽w和H轴调换.以此为基础,stack不传dim时默认dim=0,在升维的新轴方向放置tensor,若传了dim=a,则是在dim=0的基础上permute(a,..,0,..)调换a与0维;cat则是简单得在原tensor的n维度拼接;max,mean,std等计算可以传一个或多个dim,但都是每次遍历未被传入的维度a相同,而被传入维度不同的所有元素,对他们进i求和,最大值,方差等操作.
 ### 4.循环中储存指标的方法

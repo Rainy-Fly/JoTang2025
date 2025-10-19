@@ -1,10 +1,10 @@
 # 从gcc/g++到Cmake学习笔记
-<span style="font-size:8px;">注：Task任务的Makefile和CmakeLists在demo/Makefile/Makefile目录下，另外,我先"个人练习"目录中写了cpp,hpp的Makefile练习</span>
+<span style="font-size:8px;">注：Task任务的Makefile和CmakeLists在demo/Makefile目录下，另外,我先"个人练习"目录中写了cpp,hpp的Makefile练习</span>
 
 ## 一.gcc/g++
 c/cpp代码的编译过程:
--   预处理：展开宏、处理 #include 指令(hpp被识别)
-	动词：-E 后缀：.i//
+-   [1]预处理：根据条件编译展开宏、处理 #include 指令(hpp/h被识别)。
+	操作：gcc -E main.c -o main.i
  ***关于宏***:
 	-	define：```define  NAME  <value>```将一个value替换为NAME，但value并不确定类型，只是字符串之间的替换(代码本身都是字符串)，最终宏根据上下文确定类型:
 	```cpp
@@ -25,19 +25,20 @@ c/cpp代码的编译过程:
 	endif
 	```
 	如果此前M没有被宏定义，就执行ifndif~endif之间的代码，否则跳过；这样能在多处include这个头文件时，只会在第一个include的地方展开，否则函数max和宏PI在多个include这个头文件的地方被定义，触发重复定义的错误。
--    编译：将预处理后的代码转换为汇编语言,
-	 -	操作-S 后缀名.s
--    汇编：将汇编代码转换为机器码(二进制)
-	-	动词：-c 后缀名.o(Linux)/.obj(Windows)
--    链接：将多个 .o 文件和库文件组合成可执行文件
-	-	动词：无，直接```g++ a.o b.o -o project```后缀：Linux下默认a.out,指定名字则没有(如这里的project),Windows下为.exe
+
+-    [2]编译：将预处理后的代码转换为汇编语言,进行词法、语法、语义分析，生成中间代码并优化
+	 -	gcc -S main.o -o main.s
+-    [3]汇编：将汇编代码转换为机器码(二进制)
+	-	动词：gcc -c main.s -o main.o(Linux)/main.obj(Windows)
+-    [4]链接：将多个 .o 文件和库文件(静态库与动态库)组合成可执行文件
+	-	操作：```g++ a.o b.o -o project```后缀：不指定名字时，Linux下默认a.out,Windows下为a.exe，指定名字时不加后缀(如这里的project)
 
 从.c直达.o再到executable(可执行的)的命令:
 -	```gcc(g++) -c main.cpp -o name1.o```先完成预处理,main.cpp中的```#include <other.hpp>```将hpp内容插入main.cpp,把文本cpp编译为汇编语言,再编为机械码,生成.o目标文件.加上-o在后面给.o文件命名为name1.o,不加就是原名加.o后缀:**main.o** 
 -	```g++ main.o other.o -o name```将多个.oi链接为可执行文件,并命名为name,不加-o就默认为a.out		
 -	最后用```./ name```即可运行	
 
-**教训:我一开始用gcc编译没问题,结果链接时用gcc一堆报错,原来gcc和g++都能编译,但是链接期g++才能链接c++文件**
+**教训:我一开始用gcc预处理，编译，汇编，没问题,结果链接时用gcc一堆报错,原来gcc和g++执行前几步都没问题,但是链接期只有g++才能链接c++文件**
 
 ````
 gcc main.o -o myc
@@ -148,3 +149,16 @@ find_package(Eigen3 ...)
 target_link_libiraries(project PRIVATE
 	Eigen::Eigen)#和找源文件相似
 ```
+
+## python与C/C++
+### 基础概念：
+强类型语言：不允许隐式转换，比如int a=32+"abb"报错，需要显示写int(c),d.ToString()等显示转换
+弱类型语言：隐式转换较宽松，比如char可以转换为ASCll表对应的int索引
+静态类型语言：变量声明时要写变量类型，编译期确定，之后不能变成其他类型
+动态类型语言：运行时才绝定变量类型
+### 为何C比python快
+C是静态弱类型语言(C++是静态较弱类型)，编译期就确定类型，值类型在栈上，内存可以连续，CPU方便找
+python是动态强类型语言，边执行边解释，实时进行类型检查;且一切皆对象，每个变量都是指向堆上对象的指针，可以随时更换指针指向的对象如```a=20;b="name";a=b```(注意，python是强类型，不能a+b)；另外，python无法实现并发，垃圾收集在主线程中进行。
+### C++写核心逻辑，python负责
+-	python简单灵活，生态丰富，能够快速做出demo，适合做上层业务逻辑;且作为胶水语言，python可以方便地做出接口,适合频繁更新优化
+-	C++直接操作硬件，性能高，写性能要求高的计算逻辑，还能控制并发
